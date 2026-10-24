@@ -93,3 +93,12 @@ Since 4.2, **acceptance is down and handler complaints are up.** Support sees tw
 - Tickets (database): ~5–8/week baseline → 20 / 27 / 32 in the weeks after 4.2, still climbing for weeks (Support lead's "3x" understated it).
 - Bulk Callout contradiction confirmed across sources: Releases DB + 4.1 page + repo CHANGELOG say shipped 4.1; the Bulk Callout brief says "nobody's picked it up yet." Also no baseline/data field exists for its success metric (time-to-full-coverage).
 - Open EM question (did routing change intend to hit decliners too?) is answerable from repo: history.py treats "turned down" and "missed" identically. Q3 roadmap DB still marks dropped 4.2 items "Committed" — the Helen conversation about what slipped still hasn't happened.
+
+### Session findings — Module 4, part 2 (interviews + full tickets, 24 Oct 2026)
+- Four customer interviews (Sofia, 2–5 Sept; wiki Customer interviews DB): "gone before answer" 3/4, "too quiet" 2/4, small text 2/4, alert-the-handler-too 2/4, dark mode 1/4 (Kip, emphatic), filter-reset-warning 1/4 (Ambrose), Supply/requisitions 1/4 (Halloran).
+- All 147 support_tickets grouped (counts sum to 147): too quiet 30, console UI 29, Supply/gear 26, admin/how-to 24, gone-before 16, filters 16, notifications 6. The two 4.2 symptoms (quiet 30 + gone-before 16 = 46) are the largest product-related block.
+- The two piles DISAGREE on the #1 symptom: interviews feel "gone before" most (3/4, vivid); tickets show "too quiet" is bigger (30 vs 16). Resolve by sequencing, not by picking one.
+- Interview-loud / ticket-rare: dark mode, bigger text, alert-the-handler. Ticket-heavy / interview-absent: admin/how-to (24), operational UI bugs (logouts, slowness), specific gear failures, notification reliability.
+- Agreed priority order (my rec): P0 ease ping wait back up (high-confidence, 1-line, reversible); P1 confirm-then-partially-rebalance proximity (highest impact, gated on availability data/Wen); P1.5 filter-reset warning (quick win); P2 triage admin/ops long tail; redesign asks → Sofia; Supply → Supply team.
+- Deliverables written this session: 00-rook/feedback/customer-interviews-summary.md and 00-rook/company/prd-4.2-recovery.md (4.2 recovery PRD, draft — student may refine in later modules).
+- Still open: "Lab A sentence" — student referenced it but it's not in the repo; need the actual sentence to check it.

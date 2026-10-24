@@ -44,3 +44,27 @@ can you share the underlying data for each of these
 
 ### 10.
 so what is the root cause of these problems? What changed in the recent days/months?
+
+### 11.
+can you also come up with a process flow diagram based on this data
+
+### 12.
+did you already start a requirements PRD as well
+
+### 13.
+can you update the process flow diagram taking into account the new findings with the ticket data as well
+
+### 14.
+I see you haven't updated the claude.md file for a long time, don't these changes go into that file?
+
+### 15.
+You've now read both piles. Where do they disagree? What's loud in the interviews but rare in the tickets, and what's all over the tickets that nobody brought up in the interviews?
+
+### 16.
+Now that the two disagree on the most important problem to fix, rank the issues that you think we should fix in order of priority. You source is of course both sets of data - tickets and interviews
+
+### 17.
+So does the Lab A sentence still hold
+
+### 18.
+I like you prioritization and recommended actions. Can you turn this into a PRD
