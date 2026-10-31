@@ -80,6 +80,39 @@ who stops being pinged is a churn and revenue risk, not only an unhappy user.
 - **Acceptance criteria:** "too quiet" ticket theme returns to baseline; no rise
   in complaints from wide-area responders; acceptance rate recovers.
 
+### P1b — Scoring recovery: give stuck responders a way back  *(pairs with P1)*
+The recent-acceptance score (`history.py`) is a one-way trap: it only goes up
+when a responder *takes* a job, but a quiet responder gets no jobs to take, and
+the score never heals on its own. The four quiet responders (Vesper, Farlight,
+The Undertow, Meteor Mite) are caught in it. Two things must be fixed together —
+un-stick the score, and manufacture the at-bats to raise it — plus stop the bleed.
+
+- **A1 — Decay the score toward neutral over idle time.** Implement the dormant
+  `# TODO(2019)` above `record_declined` in `history.py`: for each day/week a
+  responder is quiet, nudge `recent_acceptance` back toward `NEUTRAL_SCORE` (0.5).
+  Self-healing, no human needed. Small, contained change. *(Alternative: score
+  only on a trailing ~30-day window so old penalties age out.)*
+- **A2 — Raise `SCORE_FLOOR`.** Today it's 0, so a bad run drops a responder out
+  of contention entirely. Lift it (e.g. 0.4) so no one is fully buried.
+- **B1 — Reserve an "exploration" ping.** Periodically (1 in N callouts per area,
+  or on a timer) offer a callout to an available but long-quiet responder
+  *regardless of rank*, so they get the at-bat needed to earn `ACCEPTANCE_CREDIT`
+  (+0.08). Only fire when a reliable fallback is also in the list, so real
+  coverage is never delayed. This is the bigger change — Wen to scope the
+  ranking/offer path.
+- **B2 — Re-entry boost.** When a responder re-confirms availability after a gap,
+  reset their score to neutral (or temporarily bump rank for their next few
+  callouts) so they restart with a fair shot.
+- **C1 — Stop scoring a miss like a refusal.** In `offer.py`, a timed-out ping
+  calls the same `record_declined` (−`DECLINE_PENALTY`, 0.12) as a "no". Split
+  them: a miss should cost nothing, or far less. Otherwise every fix above gets
+  erased the first time a rusty responder is slow on the (now longer) clock.
+  High-confidence, small change; answers Marcus's 14 Aug question directly.
+- **Minimum viable combo:** A1 (un-stick) + B1 (at-bats) + C1 (don't re-sink).
+- **Acceptance criteria:** a responder quiet for ≥2 weeks regains pings without a
+  human override; the four named responders' weekly pings/takes recover; no
+  increase in time-to-coverage on real incidents from exploration pings.
+
 ### P1.5 — Filter-reset warning  *(quick win, ship with P0)*
 - **What:** When a saved filter reverts to default (e.g. after an update), warn
   the handler rather than silently resetting.

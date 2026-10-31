@@ -98,3 +98,15 @@ can you give me a pictorial visualization of this story
 
 ### 28.
 no i want the full picture -  all responders how many they go, missed, accepted on a time scale a couple of weeks before and after 4.2
+
+### 29.
+this is all great but doesn't seem to align with the findings in the last module. can you compare the two and share your inference/hypothesis?
+
+### 30.
+so answer this question: Based on what I found, the reason some responders are getting no pings at all is ....... because ....
+
+### 31.
+so net net what is the inference?
+
+### 32.
+I don't believe in luck. What else can we do to reset so these responders get a chance to start increasing the score? Obviously they can't move locations so don't suggest that
