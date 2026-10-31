@@ -68,3 +68,33 @@ So does the Lab A sentence still hold
 
 ### 18.
 I like you prioritization and recommended actions. Can you turn this into a PRD
+
+### 19.
+I am seeing that the missed numbers are still high after Aug 10. Can you tell me why. Are a lot of pings going to the same person and they are not responding since they already accepted something. can you share some data?
+
+### 20.
+so how can we improve response? Thoughts?
+
+### 21.
+so can you analyze to see if the pings are going to local or farther away folks after 12 and before
+
+### 22.
+why are more pings going to farther away people?
+
+### 23.
+can you give me the names of the responders who went quiet after 4.2
+
+### 24.
+give me a graphical chart of how this all played out for these 2 responders,
+
+### 25.
+for each of them also give me breakdown of how many they taken/turned down/missed in near versus farther area to them
+
+### 26.
+can you extend this to all responders and see if this data still holds
+
+### 27.
+can you give me a pictorial visualization of this story
+
+### 28.
+no i want the full picture -  all responders how many they go, missed, accepted on a time scale a couple of weeks before and after 4.2
