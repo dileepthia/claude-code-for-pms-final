@@ -110,3 +110,11 @@ so net net what is the inference?
 
 ### 32.
 I don't believe in luck. What else can we do to reset so these responders get a chance to start increasing the score? Obviously they can't move locations so don't suggest that
+
+### 33.
+give me a model to play with outcome
+
+### 34.
+i also want to incorporate  2 more levers in the visual:
+lever 1 - penalize someone lesser if they say No
+lever 2 - penalize someone less if they missed as opposed to saying no
