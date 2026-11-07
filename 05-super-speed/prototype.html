@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Back in rotation — Rook Dispatch prototype</title>
+<style>
+  :root{
+    --ink:#1c1c1a; --muted:#6b6a64; --faint:#99988f;
+    --line:#e4e2d9; --bg:#f4f3ee; --card:#ffffff;
+    --accent:#185fa5; --accent-bg:#e6f1fb;
+    --warn:#854f0b; --warn-bg:#faeeda; --warn-line:#efbf6f;
+    --good:#0f6e56; --good-bg:#e1f5ee; --good-line:#7fd3b4;
+    --red:#a32d2d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
+  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
+  .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+  .logo{font-weight:600;font-size:15px}
+  .logo .dot{color:var(--accent)}
+  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--card)}
+  h1{font-size:19px;margin:14px 0 2px;font-weight:600}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+  .tabs{display:flex;gap:6px;margin:14px 0}
+  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
+    padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
+  .tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .demo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);
+    border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:18px}
+  .demo .lbl{font-size:13px;color:var(--muted);flex:1;min-width:180px}
+  button.act{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;
+    padding:9px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
+  button.act:active{transform:scale(.98)}
+  button.ghost{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:9px 14px;border-radius:8px;font-size:13px;cursor:pointer}
+  .panel{display:none}
+  .panel.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .screen-label{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
+
+  /* console */
+  .console{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .console-head{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);
+    display:flex;justify-content:space-between;align-items:center;background:var(--accent-bg)}
+  .console-head b{color:var(--ink)}
+  .incoming{display:none;margin:14px 16px 0;padding:12px 14px;background:#eceae2;border:1px solid #d7d5cc;border-radius:10px;font-size:13px}
+  .incoming b{color:var(--ink)}
+  .inc-det{color:var(--muted);margin-top:3px}
+  .cards{padding:14px 16px;display:grid;gap:14px;grid-template-columns:repeat(2,minmax(230px,1fr));align-items:start}
+  .c1{grid-column:1}
+  .c2{grid-column:2}
+  .r1{grid-row:1}
+  .r2{grid-row:2}
+  @media (max-width:560px){
+    .cards{grid-template-columns:1fr}
+    .c1,.c2,.r1,.r2{grid-column:auto;grid-row:auto}
+  }
+  .cov{border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;background:var(--card);transition:box-shadow .25s,border-color .25s}
+  .cov:hover{border-color:#cdcbc1}
+  .cov.alert{border-color:var(--warn-line);box-shadow:0 0 0 2px var(--warn-bg)}
+  .cov .row1{display:flex;justify-content:space-between;align-items:baseline}
+  .cov .nm{font-weight:600;font-size:15px}
+  .cov .area{font-size:12px;color:var(--faint)}
+  .cov .stat{font-size:13px;color:var(--muted);margin-top:4px}
+  .flag{margin-top:10px;border-radius:8px;padding:9px 11px;font-size:13px;display:none}
+  .flag.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn)}
+  .flag .why{color:#6d4a12;font-size:12px;margin-top:3px}
+  .flag.good{background:var(--good-bg);border:1px solid var(--good-line);color:var(--good);margin-top:8px}
+  .flag.info{background:#f1efe8;border:1px solid var(--line);color:var(--muted);margin-top:8px}
+  .drawer{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:13px;color:var(--muted)}
+  .drawer.open{display:block}
+  .history{}
+  .respgroup{display:grid;gap:8px}
+  .cov.histcard{cursor:default}
+  .cov.histcard:hover{border-color:var(--line)}
+  .history h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin:0 0 6px;font-weight:500}
+  .hrow{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid #f1efe9}
+  .hrow:last-child{border-bottom:none}
+  .hc{flex:1;color:var(--ink)}
+  .ht{color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .ho{font-size:11px;padding:1px 8px;border-radius:999px;white-space:nowrap}
+  .ho.acc{background:var(--good-bg);color:var(--good)}
+  .ho.dec{background:#f7e3e3;color:#800000}
+  .ho.mis{background:var(--warn-bg);color:var(--warn)}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;margin-left:6px}
+  .tag.ok{background:var(--good-bg);color:var(--good)}
+  .tag.q{background:var(--warn-bg);color:var(--warn)}
+
+  /* phone */
+  .stage{display:flex;justify-content:center}
+  .phone{width:300px;background:#111;border-radius:34px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .phscreen{background:#f7f6f2;border-radius:24px;overflow:hidden;height:560px;position:relative;display:flex;flex-direction:column}
+  .phtop{padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;background:#fff;border-bottom:1px solid var(--line)}
+  .phtop .me{font-weight:600;font-size:14px}
+  .status{font-size:11px;padding:3px 9px;border-radius:999px;display:flex;align-items:center;gap:5px;
+    background:#efeee8;color:var(--faint)}
+  .status .d{width:7px;height:7px;border-radius:50%;background:#c3c2b7}
+  .status.live{background:var(--good-bg);color:var(--good)}
+  .status.live .d{background:#19a974;box-shadow:0 0 0 0 rgba(25,169,116,.6);animation:pulse 1.8s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(25,169,116,.5)}70%{box-shadow:0 0 0 6px rgba(25,169,116,0)}100%{box-shadow:0 0 0 0 rgba(25,169,116,0)}}
+  .phbody{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+  .quietmsg{color:var(--faint);font-size:13px;text-align:center;margin:auto;padding:0 20px}
+  .ping{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+  .ping h3{margin:0 0 2px;font-size:15px}
+  .ping .meta{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .bar{height:6px;background:#eceae2;border-radius:4px;overflow:hidden;margin-bottom:4px}
+  .bar > i{display:block;height:100%;background:var(--accent);width:100%;transition:width 1s linear}
+  .timer{font-size:11px;color:var(--faint);margin-bottom:12px}
+  .ping .btns{display:flex;gap:8px}
+  .ping .btns button{flex:1;padding:10px;border-radius:9px;font-size:14px;cursor:pointer;font-weight:500}
+  .take{border:1px solid var(--good);background:var(--good);color:#fff}
+  .pass{border:1px solid var(--line);background:#fff;color:var(--muted)}
+  .resolved{background:#fff;border:1px solid var(--good-line);border-radius:14px;padding:16px;text-align:center}
+  .resolved .big{font-size:15px;font-weight:600;color:var(--good);margin-bottom:4px}
+  .resolved .note{font-size:12px;color:var(--muted)}
+  .resolved.no{border-color:#e4b1b1}
+  .resolved.no .big{color:#800000}
+  .foot{margin-top:22px;font-size:11px;color:var(--faint);text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span class="logo">Rook <span class="dot">Dispatch</span></span>
+    <span class="pill">prototype · "Back in rotation"</span>
+  </div>
+  <h1>Back in rotation</h1>
+  <p class="sub">What a handler sees when one of their responders goes quiet — and what that responder feels when the system reaches back. Two screens, one event.</p>
+
+  <div class="demo">
+    <span class="lbl" id="demoLbl">Right now everything looks normal. Meteor Mite was pinged yesterday.</span>
+    <button class="act" id="simBtn" onclick="simulate()">▶ Simulate: 3 days, no callouts</button>
+    <button class="ghost" onclick="reset()">Reset</button>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" id="t-con" onclick="show('con')">Handler console</button>
+    <button class="tab" role="tab" aria-selected="false" id="t-phone" onclick="show('phone')">Responder app</button>
+  </div>
+
+  <!-- HANDLER CONSOLE -->
+  <section class="panel on" id="p-con">
+    <p class="screen-label">Where this happens · the console coverage view Kip already uses</p>
+    <div class="console">
+      <div class="console-head"><span>Coverage — <b>Kip's responders</b></span><span>Signed in: Kip · Eastgate</span></div>
+      <div class="incoming" id="incoming"><b>Incoming call</b> — offered to Meteor Mite<div class="inc-det">Eastgate · structural-entry · ~6 min away · waiting for an answer</div></div>
+      <div class="cards">
+          <div class="cov c1 r1" onclick="toggleDrawer(this)">
+            <div class="row1"><span class="nm">The Gale <span class="tag ok">active</span></span><span class="area">Eastgate</span></div>
+            <div class="stat" id="galeStat">Last callout 2 hours ago · taking steadily</div>
+          </div>
+          <div class="cov histcard c1 r2"><div class="history" id="galeHist"></div></div>
+        <div class="cov c2 r1" id="mmCard" onclick="toggleDrawer(this)">
+          <div class="row1"><span class="nm">Meteor Mite <span class="tag ok" id="mmTag">active</span></span><span class="area">Eastgate</span></div>
+          <div class="stat" id="mmStat">Last callout 1 day ago</div>
+          <div class="flag warn" id="mmWarn">
+            Meteor Mite has gone quiet — she hasn't been offered a callout in 3 days
+            <div class="why">She's being passed over by the ranking, not turning jobs down — she still takes 85% of callouts in Eastgate.</div>
+          </div>
+          <div class="flag good" id="mmGood">✓ Meteor Mite is back in rotation automatically — she'll get the next Eastgate callout she's suited for. Nothing for you to do.</div>
+          <div class="flag" id="mmResult" style="display:none"></div>
+          <div class="drawer" id="mmDrawer">
+            Click is just to expand detail. In the real console this card is read-only: the handler doesn't press anything — the system re-inserts her on its own after 3 quiet days. The card exists so Kip <em>sees</em> it before she writes in.
+          </div>
+        </div>
+          <div class="cov histcard c2 r2"><div class="history" id="mmHist"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESPONDER APP -->
+  <section class="panel" id="p-phone">
+    <p class="screen-label">Where this happens · the responder's phone app (Meteor Mite)</p>
+    <div class="stage">
+      <div class="phone"><div class="phscreen">
+        <div class="phtop">
+          <span class="me">Meteor Mite</span>
+          <span class="status" id="phStatus"><span class="d"></span><span id="phStatusTxt">Quiet</span></span>
+        </div>
+        <div class="phbody" id="phBody">
+          <div class="quietmsg" id="phQuiet">No callouts right now.<br>Your phone's been quiet for a few days.</div>
+        </div>
+      </div></div>
+    </div>
+  </section>
+
+  <p class="foot">Prototype · Rook Dispatch is a fictional course scenario · no real people or data.</p>
+</div>
+
+<script>
+  var inRotation=false, timerId=null, CALL='Eastgate · structural-entry · ~6 min away';
+  var HOUR=3600000, DAY=86400000;
+  function pad(n){return (n<10?'0':'')+n;}
+  function fmt(d){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+', '+pad(d.getHours())+':'+pad(d.getMinutes());}
+  function ago(ms){return new Date(Date.now()-ms);}
+  function initTimes(){
+    document.getElementById('galeStat').textContent='Last callout: '+fmt(ago(2*HOUR))+' · taking steadily';
+    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(DAY));
+  }
+  var histGale=[], histMM=[], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtShort(d){return d.getDate()+' '+MON[d.getMonth()]+', '+pad(d.getHours())+':'+pad(d.getMinutes());}
+  function oLabel(o){return o==='acc'?'Accepted':(o==='dec'?'Declined':'Missed');}
+  function renderHist(id,arr){
+    var h='<h4>Callout history</h4>';
+    arr.forEach(function(r){h+='<div class="hrow"><span class="hc">'+r.c+'</span><span class="ht">'+fmtShort(r.t)+'</span><span class="ho '+r.o+'">'+oLabel(r.o)+'</span></div>';});
+    document.getElementById(id).innerHTML=h;
+  }
+  function initHist(){
+    histGale=[['Structural-entry',2*HOUR,'acc'],['Crowd-management',5*HOUR,'acc'],['Flight assist',22*HOUR,'dec'],['Structural-entry',26*HOUR,'acc'],['Aquatic rescue',2*DAY,'acc']].map(function(x){return {c:x[0],t:ago(x[1]),o:x[2]};});
+    histMM=[['Structural-entry',DAY,'acc'],['De-escalation',2*DAY,'mis'],['Structural-entry',4*DAY,'acc'],['Cold-weather',5*DAY,'acc'],['Structural-entry',6*DAY,'acc']].map(function(x){return {c:x[0],t:ago(x[1]),o:x[2]};});
+    renderHist('galeHist',histGale); renderHist('mmHist',histMM);
+  }
+
+  function show(which){
+    document.getElementById('p-con').classList.toggle('on', which==='con');
+    document.getElementById('p-phone').classList.toggle('on', which==='phone');
+    document.getElementById('t-con').setAttribute('aria-selected', which==='con');
+    document.getElementById('t-phone').setAttribute('aria-selected', which==='phone');
+  }
+  function toggleDrawer(card){
+    var d=card.querySelector('.drawer');
+    if(d) d.classList.toggle('open');
+  }
+  function simulate(){
+    inRotation=true;
+    // console side
+    document.getElementById('mmTag').textContent='quiet → returning';
+    document.getElementById('mmTag').className='tag q';
+    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(3*DAY));
+    document.getElementById('mmWarn').style.display='block';
+    document.getElementById('mmGood').style.display='block';
+    document.getElementById('mmCard').classList.add('alert');
+    document.getElementById('demoLbl').textContent='Meteor Mite hit 3 quiet days. The console now flags it, and the system has eased her back in — see both screens.';
+    document.getElementById('simBtn').disabled=true;
+    document.getElementById('simBtn').style.opacity=.5;
+    document.getElementById('incoming').style.display='block';
+    // phone side
+    var st=document.getElementById('phStatus');
+    st.className='status live';
+    document.getElementById('phStatusTxt').textContent='Actively receiving pings';
+    showPing();
+  }
+  function showPing(){
+    var body=document.getElementById('phBody');
+    body.innerHTML=''+
+      '<div class="ping" id="pingCard">'+
+        '<h3>New callout</h3>'+
+        '<div class="meta">'+CALL+'</div>'+
+        '<div class="bar"><i id="barFill"></i></div>'+
+        '<div class="timer" id="timerTxt">90s to answer — a little longer, since you\'re just back in rotation</div>'+
+        '<div class="btns"><button class="take" onclick="resolve(\'take\')">Take it</button>'+
+        '<button class="pass" onclick="resolve(\'pass\')">Pass</button></div>'+
+      '</div>';
+    var t=90, fill=document.getElementById('barFill'), txt=document.getElementById('timerTxt');
+    timerId=setInterval(function(){
+      t--; fill.style.width=(t/90*100)+'%';
+      if(t<=0){clearInterval(timerId); resolve('miss');}
+      else txt.textContent=t+'s to answer — a little longer, since you\'re just back in rotation';
+    },1000);
+  }
+  function resolve(kind){
+    if(timerId){clearInterval(timerId);timerId=null;}
+    var body=document.getElementById('phBody'), html='';
+    if(kind==='take') html='<div class="resolved"><div class="big">Thanks for accepting the call.</div><div class="note">'+CALL+'</div></div>';
+    else if(kind==='pass') html='<div class="resolved no"><div class="big">Confirmed that you are unable to take this call.</div></div>';
+    else html='<div class="resolved"><div class="big">Missed</div><div class="note">Didn\'t count against you — a miss isn\'t treated like a "no" while you\'re returning. Still in rotation.</div></div>';
+    body.innerHTML=html;
+    // flow the responder's answer back to Kip's console card
+    document.getElementById('incoming').style.display='none';
+    var r=document.getElementById('mmResult'), ts=fmt(new Date());
+    document.getElementById('mmWarn').style.display='none';
+    if(kind==='take'){
+      document.getElementById('mmTag').textContent='active';
+      document.getElementById('mmTag').className='tag ok';
+      document.getElementById('mmCard').classList.remove('alert');
+      document.getElementById('mmGood').style.display='none';
+      document.getElementById('mmStat').textContent='On a callout now · Eastgate';
+      r.className='flag good'; r.textContent='Accepted · '+CALL+' · '+ts;
+    } else if(kind==='pass'){
+      r.className='flag info'; r.textContent='Meteor Mite declined this callout — no penalty. Still in rotation. · '+ts;
+    } else {
+      r.className='flag info'; r.textContent='Meteor Mite missed this callout — not counted against her. Still in rotation. · '+ts;
+    }
+    r.style.display='block';
+    histMM.unshift({c:'Structural-entry', t:new Date(), o: kind==='take'?'acc':(kind==='pass'?'dec':'mis')});
+    renderHist('mmHist',histMM);
+    document.getElementById('demoLbl').textContent='Meteor Mite responded on her phone — her card on Kip\'s console now reflects it.';
+  }
+  function reset(){
+    inRotation=false;
+    if(timerId){clearInterval(timerId);timerId=null;}
+    document.getElementById('mmTag').textContent='active';
+    document.getElementById('mmTag').className='tag ok';
+    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(DAY));
+    document.getElementById('mmWarn').style.display='none';
+    document.getElementById('mmGood').style.display='none';
+    document.getElementById('mmCard').classList.remove('alert');
+    document.getElementById('mmResult').style.display='none';
+    document.getElementById('incoming').style.display='none';
+    document.getElementById('demoLbl').textContent='Right now everything looks normal. Meteor Mite was pinged yesterday.';
+    var sim=document.getElementById('simBtn'); sim.disabled=false; sim.style.opacity=1;
+    var st=document.getElementById('phStatus'); st.className='status';
+    document.getElementById('phStatusTxt').textContent='Quiet';
+    document.getElementById('phBody').innerHTML='<div class="quietmsg">No callouts right now.<br>Your phone\'s been quiet for a few days.</div>';
+    initHist();
+  }
+  initTimes();
+  initHist();
+</script>
+</body>
+</html>

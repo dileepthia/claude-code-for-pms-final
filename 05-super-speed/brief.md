@@ -9,6 +9,11 @@ them. The ranking quietly dropped them, and the way scoring works they can't
 climb back: the only way your score goes up is to *take* a job, and they aren't
 being offered any. So "quiet" becomes permanent on its own.
 
+That "no way back" is the exact thing Wen flagged in a note beside the code
+years ago — she wondered whether a score should ease back on its own, and nobody
+ever came back to it. This is us coming back to it properly, rather than quietly
+changing a number and moving on.
+
 The fix in the code is small. But to the people it happens to, the whole thing
 is invisible. Nobody at Rook can see a responder going quiet — it only shows up
 later as a handler writing in. And the responder just experiences a phone that
@@ -56,9 +61,9 @@ Helen asked for and what keeps it from silently happening again.
 Dispatch only. The quiet-responder flag lives in the console's existing coverage
 view (it informs the handler; there's no button to press — re-insertion is
 automatic); the longer re-entry window + the ambient indicator live in the
-responder app. The underlying scoring fixes (let a quiet score heal over
-time; stop counting a miss the same as a refusal) ship alongside — but those are
-the plumbing. This brief is the part people see.
+responder app. The underlying scoring fixes — letting a quiet score ease back
+over time (finally answering Wen's note) and not counting a miss the same as a
+refusal — ship alongside; they're the plumbing under what people see.
 
 Not in scope: a full rewrite of how ranking works, a handler phone app (separate
 Q4 exploration), anything on the Supply side. Confidentiality stands — none of
@@ -72,7 +77,12 @@ this needs or touches a responder's real identity.
 - **Responder cue is ambient, not an event** — a small "Actively receiving
   pings" indicator, never a "you went quiet" message.
 
-## Clickable version
-A rough prototype of the handler's coverage card (the "gone quiet · back in
-rotation automatically" flag) and the responder's app corner (the "Actively
-receiving pings" indicator) to follow, so Helen can click it rather than read it.
+## Clickable version (built)
+`prototype.html` in this folder is a working click-through — open it in a
+browser, no setup. Hit "Simulate: 3 days" and you can watch one event across both
+screens: Kip's coverage card flags **Meteor Mite by name** the moment she's gone
+quiet 3 days ("being passed over — not turning jobs down… back in rotation
+automatically"), and the responder app shows her ambient "Actively receiving
+pings" indicator plus an incoming callout on a longer window. Whatever she does
+on her phone — take, decline or miss — flows straight back onto Kip's card, with
+the date and time it happened.
