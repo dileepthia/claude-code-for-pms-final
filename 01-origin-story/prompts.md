@@ -23,7 +23,10 @@ prompt library built from your own questions.
 ---
 
 ### 1.
+After analyzing the information are you seeing any discrepancies between data from the different data sources specifically
 
 ### 2.
+for bulk callout, shouldn't we rely on the codebase as opposed to the document? Maybe the release notes was updated and changes pushed out in error and ahead of the actual code being deployed?
 
 ### 3.
+Is the support tickets and customer interviews being compared for the same time window or not?
