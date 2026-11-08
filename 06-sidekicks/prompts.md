@@ -14,6 +14,7 @@ prompt library built from your own questions.
 ---
 
 ### 1.
+Make a skill called review-checklist. When I point it at a brief, it checks that the brief: names who owns it, says how we'll know it worked, keeps the same scope start to finish, and explains the problem before the fix.
 
 ### 2.
 
