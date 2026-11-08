@@ -130,3 +130,9 @@ Since 4.2, **acceptance is down and handler complaints are up.** Support sees tw
 - Deliverable 2 — prototype: 05-super-speed/prototype.html, a single self-contained clickable file (built + verified in browser). Handler console (Kip, 2 responders: The Gale + Meteor Mite — accurate to the Sept interview) and responder phone app, "Simulate 3 days" drives both. Features the student iterated: per-responder current-callout tile + separate history card (side by side, histories top-aligned); live "Incoming call" banner on the console that clears on response or timeout; responses flow from phone back to console with date+timestamps; light-blue console header; maroon "unable to take" message.
 - Kip really does handle exactly 2 responders (Meteor Mite + The Gale) per the customer interviews — not a prototype simplification. Meteor Mite is one of the four quiet responders, so showing her go quiet on Kip's console is the real situation.
 - Not yet pushed decision history: student reviewed/iterated heavily before saving; brief was pushed mid-session, prototype saved locally until wrap-up.
+
+### Session findings — Module 1 (Origin story, 7 Nov 2026)
+- Done out of order: the orientation above was actually written during Modules 4–5. This session re-read the named sources and *verified* it rather than writing it fresh.
+- Sources checked: About Rook, Glossary, Team directory, Releases + Q3 roadmap DBs, the four product briefs, and Priya's handoff docx. The role-signed 4.2 comments map to the Team directory — Engineering manager=Marcus, Staff engineer=Wen, Product designer=Sofia, Support lead=Nadia.
+- Result: the orientation checks out against every source — no corrections needed.
+- Kept CLAUDE.md as-is (student's call): ~2-page orientation at top, Module 4/5 findings retained below, rather than trimming to fit two pages.

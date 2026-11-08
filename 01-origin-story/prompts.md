@@ -23,6 +23,7 @@ prompt library built from your own questions.
 ---
 
 ### 1.
+Look at this screenshot. It shows a cost of $104.29 for this session. Does it mean I am going to be billed for this amount?
 
 ### 2.
 
