@@ -3,312 +3,508 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Back in rotation — Rook Dispatch prototype</title>
+<title>Rook Dispatch — Routing & Re-entry Console</title>
 <style>
   :root{
-    --ink:#1c1c1a; --muted:#6b6a64; --faint:#99988f;
-    --line:#e4e2d9; --bg:#f4f3ee; --card:#ffffff;
-    --accent:#185fa5; --accent-bg:#e6f1fb;
-    --warn:#854f0b; --warn-bg:#faeeda; --warn-line:#efbf6f;
-    --good:#0f6e56; --good-bg:#e1f5ee; --good-line:#7fd3b4;
-    --red:#a32d2d;
+    --bg:#eef2f7; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --line:#e3e8f0; --primary:#1e5fbf; --primary-ink:#1b4fa0; --primary-bg:#e8f1fd;
+    --accepted:#15a34a; --declined:#9f1239; --missed:#dd8403; --quiet:#64748b; --back:#0ea5e9;
+    --shadow:0 1px 2px rgba(15,23,42,.06),0 2px 8px rgba(15,23,42,.05);
+    --radius:12px;
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.5}
-  .wrap{max-width:900px;margin:0 auto;padding:20px 16px 60px}
-  .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
-  .logo{font-weight:600;font-size:15px}
-  .logo .dot{color:var(--accent)}
-  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 9px;background:var(--card)}
-  h1{font-size:19px;margin:14px 0 2px;font-weight:600}
-  .sub{color:var(--muted);font-size:13px;margin:0 0 16px}
-  .tabs{display:flex;gap:6px;margin:14px 0}
-  .tab{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--muted);
-    padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
-  .tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .demo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--card);
-    border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:18px}
-  .demo .lbl{font-size:13px;color:var(--muted);flex:1;min-width:180px}
-  button.act{appearance:none;border:1px solid var(--accent);background:var(--accent);color:#fff;
-    padding:9px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:500}
-  button.act:active{transform:scale(.98)}
-  button.ghost{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
-    padding:9px 14px;border-radius:8px;font-size:13px;cursor:pointer}
-  .panel{display:none}
-  .panel.on{display:block;animation:fade .25s ease}
-  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
-  .screen-label{font-size:12px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin:0 0 8px}
-
-  /* console */
-  .console{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .console-head{padding:12px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);
-    display:flex;justify-content:space-between;align-items:center;background:var(--accent-bg)}
-  .console-head b{color:var(--ink)}
-  .incoming{display:none;margin:14px 16px 0;padding:12px 14px;background:#eceae2;border:1px solid #d7d5cc;border-radius:10px;font-size:13px}
-  .incoming b{color:var(--ink)}
-  .inc-det{color:var(--muted);margin-top:3px}
-  .cards{padding:14px 16px;display:grid;gap:14px;grid-template-columns:repeat(2,minmax(230px,1fr));align-items:start}
-  .c1{grid-column:1}
-  .c2{grid-column:2}
-  .r1{grid-row:1}
-  .r2{grid-row:2}
-  @media (max-width:560px){
-    .cards{grid-template-columns:1fr}
-    .c1,.c2,.r1,.r2{grid-column:auto;grid-row:auto}
+  html,body{margin:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:18px; padding-bottom:40px;
   }
-  .cov{border:1px solid var(--line);border-radius:10px;padding:14px;cursor:pointer;background:var(--card);transition:box-shadow .25s,border-color .25s}
-  .cov:hover{border-color:#cdcbc1}
-  .cov.alert{border-color:var(--warn-line);box-shadow:0 0 0 2px var(--warn-bg)}
-  .cov .row1{display:flex;justify-content:space-between;align-items:baseline}
-  .cov .nm{font-weight:600;font-size:15px}
-  .cov .area{font-size:12px;color:var(--faint)}
-  .cov .stat{font-size:13px;color:var(--muted);margin-top:4px}
-  .flag{margin-top:10px;border-radius:8px;padding:9px 11px;font-size:13px;display:none}
-  .flag.warn{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn)}
-  .flag .why{color:#6d4a12;font-size:12px;margin-top:3px}
-  .flag.good{background:var(--good-bg);border:1px solid var(--good-line);color:var(--good);margin-top:8px}
-  .flag.info{background:#f1efe8;border:1px solid var(--line);color:var(--muted);margin-top:8px}
-  .drawer{display:none;margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;font-size:13px;color:var(--muted)}
-  .drawer.open{display:block}
-  .history{}
-  .respgroup{display:grid;gap:8px}
-  .cov.histcard{cursor:default}
-  .cov.histcard:hover{border-color:var(--line)}
-  .history h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--faint);margin:0 0 6px;font-weight:500}
-  .hrow{display:flex;align-items:center;gap:8px;font-size:12px;padding:5px 0;border-bottom:1px solid #f1efe9}
-  .hrow:last-child{border-bottom:none}
-  .hc{flex:1;color:var(--ink)}
-  .ht{color:var(--faint);white-space:nowrap;font-variant-numeric:tabular-nums}
-  .ho{font-size:11px;padding:1px 8px;border-radius:999px;white-space:nowrap}
-  .ho.acc{background:var(--good-bg);color:var(--good)}
-  .ho.dec{background:#f7e3e3;color:#800000}
-  .ho.mis{background:var(--warn-bg);color:var(--warn)}
-  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;margin-left:6px}
-  .tag.ok{background:var(--good-bg);color:var(--good)}
-  .tag.q{background:var(--warn-bg);color:var(--warn)}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1,h2,h3,h4{margin:0}
 
-  /* phone */
-  .stage{display:flex;justify-content:center}
-  .phone{width:300px;background:#111;border-radius:34px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
-  .phscreen{background:#f7f6f2;border-radius:24px;overflow:hidden;height:560px;position:relative;display:flex;flex-direction:column}
-  .phtop{padding:12px 16px 8px;display:flex;justify-content:space-between;align-items:center;background:#fff;border-bottom:1px solid var(--line)}
-  .phtop .me{font-weight:600;font-size:14px}
-  .status{font-size:11px;padding:3px 9px;border-radius:999px;display:flex;align-items:center;gap:5px;
-    background:#efeee8;color:var(--faint)}
-  .status .d{width:7px;height:7px;border-radius:50%;background:#c3c2b7}
-  .status.live{background:var(--good-bg);color:var(--good)}
-  .status.live .d{background:#19a974;box-shadow:0 0 0 0 rgba(25,169,116,.6);animation:pulse 1.8s infinite}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(25,169,116,.5)}70%{box-shadow:0 0 0 6px rgba(25,169,116,0)}100%{box-shadow:0 0 0 0 rgba(25,169,116,0)}}
-  .phbody{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto}
-  .quietmsg{color:var(--faint);font-size:13px;text-align:center;margin:auto;padding:0 20px}
-  .ping{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.05)}
-  .ping h3{margin:0 0 2px;font-size:15px}
-  .ping .meta{font-size:12px;color:var(--muted);margin-bottom:10px}
-  .bar{height:6px;background:#eceae2;border-radius:4px;overflow:hidden;margin-bottom:4px}
-  .bar > i{display:block;height:100%;background:var(--accent);width:100%;transition:width 1s linear}
-  .timer{font-size:11px;color:var(--faint);margin-bottom:12px}
-  .ping .btns{display:flex;gap:8px}
-  .ping .btns button{flex:1;padding:10px;border-radius:9px;font-size:14px;cursor:pointer;font-weight:500}
-  .take{border:1px solid var(--good);background:var(--good);color:#fff}
-  .pass{border:1px solid var(--line);background:#fff;color:var(--muted)}
-  .resolved{background:#fff;border:1px solid var(--good-line);border-radius:14px;padding:16px;text-align:center}
-  .resolved .big{font-size:15px;font-weight:600;color:var(--good);margin-bottom:4px}
-  .resolved .note{font-size:12px;color:var(--muted)}
-  .resolved.no{border-color:#e4b1b1}
-  .resolved.no .big{color:#800000}
-  .foot{margin-top:22px;font-size:11px;color:var(--faint);text-align:center}
+  header.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--primary);display:grid;place-items:center;color:#fff;font-weight:800;font-size:17px;box-shadow:var(--shadow)}
+  .brand h1{font-size:18px;letter-spacing:-.01em}
+  .brand p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+  .fixmaster{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:7px 8px 7px 15px;box-shadow:var(--shadow)}
+  .fixmaster .lbl{font-weight:650;font-size:13px}
+  .fixmaster .lbl small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+
+  .switch{position:relative;display:inline-block;width:46px;height:26px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#cbd5e1;border-radius:999px;transition:.18s;cursor:pointer}
+  .slider:before{content:"";position:absolute;height:20px;width:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+  input:checked + .slider{background:var(--primary)}
+  input:checked + .slider:before{transform:translateX(20px)}
+  .switch.back input:checked + .slider{background:var(--back)}
+
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:13px 15px;box-shadow:var(--shadow)}
+  .kpi .k-label{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:650}
+  .kpi .k-val{font-size:26px;font-weight:750;letter-spacing:-.02em;margin-top:3px;font-variant-numeric:tabular-nums}
+  .kpi .k-sub{font-size:12px;color:var(--faint);margin-top:1px}
+  .k-val.good{color:var(--accepted)} .k-val.warn{color:var(--missed)} .k-val.bad{color:var(--declined)}
+
+  .controls{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);margin-bottom:14px}
+  .controls h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:11px}
+  .levers{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 22px}
+  .lever label{display:flex;justify-content:space-between;font-weight:600;font-size:12.5px;margin-bottom:5px}
+  .lever label .val{color:var(--primary-ink);font-weight:750}
+  .lever input[type=range]{width:100%;accent-color:var(--primary);cursor:pointer}
+  .lever .hint{color:var(--faint);font-size:11px;margin-top:3px}
+  .toggles{display:flex;gap:22px;flex-wrap:wrap;align-items:center;margin-top:14px;padding-top:13px;border-top:1px dashed var(--line)}
+  .tog{display:flex;align-items:center;gap:9px}
+  .tog .t-txt{font-size:12.5px;font-weight:600}
+  .tog .t-txt small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+
+  .timeline{display:flex;align-items:center;gap:14px;margin-top:14px;padding-top:13px;border-top:1px dashed var(--line);flex-wrap:wrap}
+  .timeline .play{border:1px solid var(--line);background:#fff;border-radius:8px;padding:7px 13px;font-weight:650;cursor:pointer;font-size:13px;color:var(--ink)}
+  .timeline .play:hover{background:#f6f9fd;border-color:#cdd8e6}
+  .timeline input[type=range]{flex:1;min-width:180px;accent-color:var(--primary)}
+  .wk-read{font-size:13px;font-weight:650;min-width:150px}
+  .wk-read .rel{color:var(--declined);font-weight:700}
+
+  .main{display:grid;grid-template-columns:1.55fr .95fr;gap:14px;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .panel-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}
+  .panel-head h2{font-size:14px}
+  .panel-head .tag{font-size:11px;color:var(--muted);background:#f1f5f9;border-radius:999px;padding:3px 9px;font-weight:600}
+
+  .console .panel-head{background:var(--primary-bg)}
+  .console .panel-head h2{color:var(--primary-ink)}
+  .incoming{margin:12px 16px 0;background:#f1f5f9;border:1px solid #dbe3ee;border-left:4px solid var(--missed);border-radius:9px;padding:10px 13px;font-size:12.5px;display:none}
+  .incoming.on{display:block}
+  .cards{padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .rcard{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;transition:.12s;background:#fff}
+  .rcard:hover{border-color:#c6d3e4;box-shadow:0 2px 10px rgba(15,23,42,.06)}
+  .rcard.sel{border-color:var(--primary);box-shadow:0 0 0 2px var(--primary-bg)}
+  .rcard .r-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .rcard .r-name{font-weight:700;font-size:13.5px}
+  .rcard .r-area{color:var(--muted);font-size:11.5px}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:999px;white-space:nowrap}
+  .badge.active{background:#e7f6ee;color:#0f7a37}
+  .badge.busy{background:#e8f1fd;color:var(--primary-ink)}
+  .badge.quiet{background:#fdecee;color:var(--declined)}
+  .badge.back{background:#e3f4fc;color:#0772a3}
+  .r-stats{display:flex;gap:6px;margin-top:11px}
+  .stat{flex:1;text-align:center;background:#f8fafc;border-radius:7px;padding:6px 2px}
+  .stat .s-n{font-weight:750;font-size:15px;font-variant-numeric:tabular-nums}
+  .stat .s-l{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-top:1px}
+  .s-n.acc{color:var(--accepted)} .s-n.dec{color:var(--declined)} .s-n.mis{color:var(--missed)}
+  .r-flag{margin-top:10px;font-size:11.5px;padding:7px 9px;border-radius:7px;line-height:1.35}
+  .r-flag.quiet{background:#fdf3f4;color:#7a1026;border:1px solid #f6dade}
+  .r-flag.back{background:#eef9ff;color:#075f85;border:1px solid #cdeafa}
+  .spark{display:flex;align-items:flex-end;gap:2px;height:26px;margin-top:10px}
+  .spark i{flex:1;background:#dbe3ee;border-radius:1.5px;min-height:2px}
+  .spark i.rel{background:#c9b27a}
+
+  .phonewrap{display:flex;justify-content:center;padding:16px}
+  .phone{width:300px;max-width:100%;background:#0f172a;border-radius:30px;padding:12px;box-shadow:0 10px 30px rgba(15,23,42,.28)}
+  .phone-screen{background:#f6f8fb;border-radius:20px;overflow:hidden;min-height:470px;display:flex;flex-direction:column}
+  .ph-head{background:#fff;padding:13px 15px;border-bottom:1px solid var(--line)}
+  .ph-head .app{font-size:11px;color:var(--muted);font-weight:650;letter-spacing:.03em;text-transform:uppercase}
+  .ph-head .who{font-weight:750;font-size:15px;margin-top:2px}
+  .ph-head .area{color:var(--muted);font-size:12px}
+  .ambient{display:flex;align-items:center;gap:8px;margin:12px 13px 0;padding:9px 12px;border-radius:9px;font-size:12.5px;font-weight:600}
+  .ambient.on{background:#e7f6ee;color:#0f7a37}
+  .ambient.off{background:#eef1f5;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;flex:none}
+  .ambient.on .dot{background:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.18)}
+  .ambient.off .dot{background:#b6c0cd}
+  .ph-body{padding:13px;flex:1;display:flex;flex-direction:column;gap:10px}
+  .callcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+  .callcard .ci-k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:650}
+  .callcard .ci-v{font-weight:750;font-size:15px;margin:3px 0 1px}
+  .callcard .ci-m{color:var(--muted);font-size:12px}
+  .countrow{display:flex;align-items:center;justify-content:space-between;margin-top:11px;font-size:11.5px;color:var(--muted)}
+  .cd-wrap{margin-top:12px;text-align:center}
+  .cd-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-weight:650}
+  .cd{display:inline-flex;align-items:baseline;gap:1px;margin-top:3px;font-variant-numeric:tabular-nums;line-height:1}
+  .cd-num{font-size:46px;font-weight:800}
+  .cd-unit{font-size:19px;font-weight:700;margin-left:2px}
+  .cd.green{color:var(--accepted)} .cd.amber{color:var(--missed)} .cd.red{color:var(--declined);animation:cdpulse .7s ease-in-out infinite}
+  @keyframes cdpulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .track{height:7px;background:#e9eef4;border-radius:999px;overflow:hidden;margin-top:8px}
+  .track > i{display:block;height:100%;background:var(--accepted);width:100%;transition:width .12s linear,background .3s}
+  .ph-btns{display:flex;gap:9px;margin-top:13px}
+  .ph-btns button{flex:1;border:0;border-radius:9px;padding:11px;font-weight:700;font-size:13px;cursor:pointer}
+  .btn-take{background:var(--accepted);color:#fff}
+  .btn-pass{background:#eef1f5;color:#334155}
+  .ph-btns button:active{transform:translateY(1px)}
+  .result{border-radius:10px;padding:12px 13px;font-size:13px;font-weight:600}
+  .result.ok{background:#e7f6ee;color:#0f7a37}
+  .result.no{background:#f7e9ec;color:var(--declined)}
+  .result.mis{background:#fdf3e5;color:#9a6200}
+  .result .sub{display:block;font-weight:500;color:inherit;opacity:.85;margin-top:4px;font-size:12px}
+  .empty-ph{background:#fff;border:1px dashed var(--line);border-radius:12px;padding:20px 14px;text-align:center;color:var(--muted);font-size:12.5px}
+  .reentry-note{font-size:11.5px;color:#0772a3;background:#eef9ff;border:1px solid #cdeafa;border-radius:8px;padding:8px 10px}
+
+  .stats{margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .stats .panel-head{background:#fff}
+  .legend{display:flex;gap:14px;align-items:center;font-size:11.5px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+  .srow{display:grid;grid-template-columns:150px 1fr 78px;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid var(--line)}
+  .srow .s-who{font-weight:650;font-size:13px}
+  .srow .s-who small{display:block;color:var(--muted);font-weight:500;font-size:11px}
+  .bars{display:flex;gap:5px;align-items:flex-end;height:66px}
+  .bcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}
+  .bcol .stack{width:70%;max-width:20px;display:flex;flex-direction:column;justify-content:flex-end;border-radius:3px 3px 0 0;overflow:hidden;min-height:2px}
+  .bcol .seg{width:100%}
+  .seg.acc{background:var(--accepted)} .seg.dec{background:var(--declined)} .seg.mis{background:var(--missed)}
+  .bcol .wk{font-size:9px;color:var(--faint);margin-top:4px;white-space:nowrap}
+  .bcol.rel:before{content:"";position:absolute;top:-4px;bottom:16px;left:-3px;border-left:2px dashed #c9b27a}
+  .bcol.now .stack{outline:2px solid var(--primary);outline-offset:1px}
+  .s-sum{text-align:right;font-size:12px}
+  .s-sum b{font-size:15px;font-variant-numeric:tabular-nums}
+  .s-sum small{display:block;color:var(--muted);font-size:10.5px}
+
+  footer{margin-top:16px;color:var(--faint);font-size:11.5px;text-align:center;line-height:1.6}
+
+  @media (max-width:900px){
+    .main{grid-template-columns:1fr}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .levers{grid-template-columns:repeat(2,1fr)}
+    .cards{grid-template-columns:1fr}
+    .srow{grid-template-columns:110px 1fr;gap:8px}
+    .s-sum{display:none}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="topbar">
-    <span class="logo">Rook <span class="dot">Dispatch</span></span>
-    <span class="pill">prototype · "Back in rotation"</span>
-  </div>
-  <h1>Back in rotation</h1>
-  <p class="sub">What a handler sees when one of their responders goes quiet — and what that responder feels when the system reaches back. Two screens, one event.</p>
 
-  <div class="demo">
-    <span class="lbl" id="demoLbl">Right now everything looks normal. Meteor Mite was pinged yesterday.</span>
-    <button class="act" id="simBtn" onclick="simulate()">▶ Simulate: 3 days, no callouts</button>
-    <button class="ghost" onclick="reset()">Reset</button>
-  </div>
-
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" aria-selected="true" id="t-con" onclick="show('con')">Handler console</button>
-    <button class="tab" role="tab" aria-selected="false" id="t-phone" onclick="show('phone')">Responder app</button>
-  </div>
-
-  <!-- HANDLER CONSOLE -->
-  <section class="panel on" id="p-con">
-    <p class="screen-label">Where this happens · the console coverage view Kip already uses</p>
-    <div class="console">
-      <div class="console-head"><span>Coverage — <b>Kip's responders</b></span><span>Signed in: Kip · Eastgate</span></div>
-      <div class="incoming" id="incoming"><b>Incoming call</b> — offered to Meteor Mite<div class="inc-det">Eastgate · structural-entry · ~6 min away · waiting for an answer</div></div>
-      <div class="cards">
-          <div class="cov c1 r1" onclick="toggleDrawer(this)">
-            <div class="row1"><span class="nm">The Gale <span class="tag ok">active</span></span><span class="area">Eastgate</span></div>
-            <div class="stat" id="galeStat">Last callout 2 hours ago · taking steadily</div>
-          </div>
-          <div class="cov histcard c1 r2"><div class="history" id="galeHist"></div></div>
-        <div class="cov c2 r1" id="mmCard" onclick="toggleDrawer(this)">
-          <div class="row1"><span class="nm">Meteor Mite <span class="tag ok" id="mmTag">active</span></span><span class="area">Eastgate</span></div>
-          <div class="stat" id="mmStat">Last callout 1 day ago</div>
-          <div class="flag warn" id="mmWarn">
-            Meteor Mite has gone quiet — she hasn't been offered a callout in 3 days
-            <div class="why">She's being passed over by the ranking, not turning jobs down — she still takes 85% of callouts in Eastgate.</div>
-          </div>
-          <div class="flag good" id="mmGood">✓ Meteor Mite is back in rotation automatically — she'll get the next Eastgate callout she's suited for. Nothing for you to do.</div>
-          <div class="flag" id="mmResult" style="display:none"></div>
-          <div class="drawer" id="mmDrawer">
-            Click is just to expand detail. In the real console this card is read-only: the handler doesn't press anything — the system re-inserts her on its own after 3 quiet days. The card exists so Kip <em>sees</em> it before she writes in.
-          </div>
-        </div>
-          <div class="cov histcard c2 r2"><div class="history" id="mmHist"></div></div>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">R</div>
+      <div>
+        <h1>Rook Dispatch — Routing &amp; Re-entry Console</h1>
+        <p>Interactive model for the <b>“Back in rotation”</b> brief · representative data, not production routing</p>
       </div>
     </div>
-  </section>
+    <label class="fixmaster" title="The fix proposed in the Director brief">
+      <span class="lbl">Back in rotation<small>auto re-insert quiet responders</small></span>
+      <span class="switch back"><input type="checkbox" id="fix"><span class="slider"></span></span>
+    </label>
+  </header>
 
-  <!-- RESPONDER APP -->
-  <section class="panel" id="p-phone">
-    <p class="screen-label">Where this happens · the responder's phone app (Meteor Mite)</p>
-    <div class="stage">
-      <div class="phone"><div class="phscreen">
-        <div class="phtop">
-          <span class="me">Meteor Mite</span>
-          <span class="status" id="phStatus"><span class="d"></span><span id="phStatusTxt">Quiet</span></span>
-        </div>
-        <div class="phbody" id="phBody">
-          <div class="quietmsg" id="phQuiet">No callouts right now.<br>Your phone's been quiet for a few days.</div>
-        </div>
-      </div></div>
+  <div class="kpis" id="kpis"></div>
+
+  <div class="controls">
+    <h3>Routing levers</h3>
+    <div class="levers">
+      <div class="lever">
+        <label>Proximity weight <span class="val" id="v-prox">0.60</span></label>
+        <input type="range" id="prox" min="0.40" max="0.70" step="0.01" value="0.60">
+        <div class="hint">Recent-acceptance weight: <span id="v-rel">0.25</span> · capability 0.15</div>
+      </div>
+      <div class="lever">
+        <label>Ping wait <span class="val" id="v-wait">60s</span></label>
+        <input type="range" id="wait" min="60" max="90" step="5" value="60">
+        <div class="hint">Time before a ping is “missed” and moves on</div>
+      </div>
+      <div class="lever">
+        <label>Miss penalty <span class="val" id="v-miss">0.12</span></label>
+        <input type="range" id="miss" min="0" max="0.12" step="0.01" value="0.12">
+        <div class="hint">How much a <i>missed</i> ping lowers the score</div>
+      </div>
+      <div class="lever">
+        <label>Decline penalty <span class="val" id="v-dec">0.12</span></label>
+        <input type="range" id="dec" min="0" max="0.12" step="0.01" value="0.12">
+        <div class="hint">How much a <i>turned-down</i> ping lowers the score</div>
+      </div>
     </div>
+    <div class="toggles">
+      <label class="tog"><span class="switch"><input type="checkbox" id="heal"><span class="slider"></span></span>
+        <span class="t-txt">Score healing<small>ease a quiet score back toward neutral</small></span></label>
+      <label class="tog"><span class="switch back"><input type="checkbox" id="fix2"><span class="slider"></span></span>
+        <span class="t-txt">Back in rotation<small>auto re-insert · longer window · miss forgiven</small></span></label>
+      <button class="play" id="reset" style="margin-left:auto">Reset to 4.2 settings</button>
+    </div>
+    <div class="timeline">
+      <button class="play" id="play">▶ Play</button>
+      <input type="range" id="week" min="0" max="9" step="1" value="9">
+      <div class="wk-read" id="wkread"></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <section class="panel console">
+      <div class="panel-head"><h2>Dispatcher console — coverage</h2><span class="tag" id="live-tag">Live</span></div>
+      <div class="incoming" id="incoming"></div>
+      <div class="cards" id="cards"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head"><h2>Responder app</h2><span class="tag" id="ph-sel">—</span></div>
+      <div class="phonewrap"><div class="phone"><div class="phone-screen" id="screen"></div></div></div>
+    </section>
+  </div>
+
+  <section class="stats">
+    <div class="panel-head">
+      <h2>Per-responder activity — pings by outcome, week by week</h2>
+      <div class="legend">
+        <span><i style="background:var(--accepted)"></i>Accepted</span>
+        <span><i style="background:var(--declined)"></i>Declined</span>
+        <span><i style="background:var(--missed)"></i>Missed</span>
+      </div>
+    </div>
+    <div id="statrows"></div>
   </section>
 
-  <p class="foot">Prototype · Rook Dispatch is a fictional course scenario · no real people or data.</p>
+  <footer>
+    Rook Industries is a fictional teaching scenario. Numbers are representative and illustrate the mechanics in the
+    “Back in rotation” brief — they are not Rook’s production routing. · Prototype for executive review.
+  </footer>
+
 </div>
 
 <script>
-  var inRotation=false, timerId=null, CALL='Eastgate · structural-entry · ~6 min away';
-  var HOUR=3600000, DAY=86400000;
-  function pad(n){return (n<10?'0':'')+n;}
-  function fmt(d){var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return d.getDate()+' '+m[d.getMonth()]+' '+d.getFullYear()+', '+pad(d.getHours())+':'+pad(d.getMinutes());}
-  function ago(ms){return new Date(Date.now()-ms);}
-  function initTimes(){
-    document.getElementById('galeStat').textContent='Last callout: '+fmt(ago(2*HOUR))+' · taking steadily';
-    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(DAY));
-  }
-  var histGale=[], histMM=[], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  function fmtShort(d){return d.getDate()+' '+MON[d.getMonth()]+', '+pad(d.getHours())+':'+pad(d.getMinutes());}
-  function oLabel(o){return o==='acc'?'Accepted':(o==='dec'?'Declined':'Missed');}
-  function renderHist(id,arr){
-    var h='<h4>Callout history</h4>';
-    arr.forEach(function(r){h+='<div class="hrow"><span class="hc">'+r.c+'</span><span class="ht">'+fmtShort(r.t)+'</span><span class="ho '+r.o+'">'+oLabel(r.o)+'</span></div>';});
-    document.getElementById(id).innerHTML=h;
-  }
-  function initHist(){
-    histGale=[['Structural-entry',2*HOUR,'acc'],['Crowd-management',5*HOUR,'acc'],['Flight assist',22*HOUR,'dec'],['Structural-entry',26*HOUR,'acc'],['Aquatic rescue',2*DAY,'acc']].map(function(x){return {c:x[0],t:ago(x[1]),o:x[2]};});
-    histMM=[['Structural-entry',DAY,'acc'],['De-escalation',2*DAY,'mis'],['Structural-entry',4*DAY,'acc'],['Cold-weather',5*DAY,'acc'],['Structural-entry',6*DAY,'acc']].map(function(x){return {c:x[0],t:ago(x[1]),o:x[2]};});
-    renderHist('galeHist',histGale); renderHist('mmHist',histMM);
+(function(){
+  "use strict";
+  const WEEKS = ['29 Jun','6 Jul','13 Jul','20 Jul','27 Jul','3 Aug','10 Aug','17 Aug','24 Aug','31 Aug'];
+  const RELEASE = 6;
+  const CALL = {area:'Eastgate', type:'structural-entry', eta:'~6 min away'};
+
+  const R = [
+    {id:'farlight',  name:'Farlight',     area:'Uptown',     base:12, type:'loser',  take:0.80},
+    {id:'meteor',    name:'Meteor Mite',  area:'Midtown',    base:11, type:'loser',  take:0.78},
+    {id:'undertow',  name:'The Undertow', area:'Harborside', base:12, type:'loser',  take:0.82},
+    {id:'gale',      name:'The Gale',     area:'Eastgate',   base:13, type:'winner', take:0.84},
+    {id:'storm',     name:'Stormwrack',   area:'Riverside',  base:13, type:'winner', take:0.80},
+    {id:'night',     name:'Nightwell',    area:'Downtown',   base:15, type:'winner', take:0.83},
+  ];
+
+  const S = { prox:0.60, wait:60, miss:0.12, dec:0.12, heal:false, fix:false, week:9, sel:'farlight', playing:false };
+  let playTimer=null, cdTimer=null;
+
+  const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+  const lerp=(a,b,t)=>a+(b-a)*clamp(t,0,1);
+  const $=id=>document.getElementById(id);
+
+  function series(r){
+    const s  = (S.prox-0.40)/0.30;
+    const mw = (90-S.wait)/30;
+    const mp = S.miss/0.12;
+    const out=[];
+    for(let w=0; w<10; w++){
+      let pingsF, status='active';
+      if(w<RELEASE){
+        pingsF = r.base - (w%2?1:0);
+      } else if(w===RELEASE){
+        pingsF = r.type==='loser' ? r.base*lerp(0.75,0.42,s) : r.base*lerp(1.05,1.18,s);
+      } else {
+        const prev = out[w-1].pingsF;
+        if(r.type==='loser'){
+          if(S.fix){
+            pingsF = prev + (r.base-prev)*0.55;
+          } else if(S.heal){
+            pingsF = Math.max(r.base*0.35, prev*lerp(0.82,0.48,s));
+          } else {
+            pingsF = prev*lerp(0.80,0.33,s)*lerp(1.0,0.88,mp);
+          }
+        } else {
+          let grow = lerp(1.08,1.30,s);
+          if(S.fix) grow*=0.93;
+          pingsF = Math.min(prev*grow, r.base*1.9);
+        }
+      }
+      if(w<RELEASE){ status='active'; }
+      else if(r.type==='winner'){ status = pingsF > r.base*1.15 ? 'busy':'active'; }
+      else { if(S.fix) status = (w===RELEASE)?'quiet':'back'; else status = (pingsF<4)?'quiet':'active'; }
+
+      const pings = Math.max(0, Math.round(pingsF));
+      let missRate = (w<RELEASE) ? 0.02 : (0.08 + 0.22*mw);
+      if(S.fix && r.type==='loser' && status==='back') missRate*=0.35;
+      const mis = Math.round(pings*missRate);
+      const acc = Math.max(0, Math.round((pings-mis)*r.take));
+      const dec = Math.max(0, pings-mis-acc);
+      out.push({pingsF,pings,acc,dec,mis,status});
+    }
+    return out;
   }
 
-  function show(which){
-    document.getElementById('p-con').classList.toggle('on', which==='con');
-    document.getElementById('p-phone').classList.toggle('on', which==='phone');
-    document.getElementById('t-con').setAttribute('aria-selected', which==='con');
-    document.getElementById('t-phone').setAttribute('aria-selected', which==='phone');
+  function allSeries(){ const m={}; R.forEach(r=>m[r.id]=series(r)); return m; }
+
+  function renderKPIs(data){
+    let P=0,A=0,M=0,quiet=0;
+    R.forEach(r=>{const c=data[r.id][S.week];P+=c.pings;A+=c.acc;M+=c.mis;if(c.status==='quiet')quiet++;});
+    const accPct=P?Math.round(100*A/P):0, misPct=P?Math.round(100*M/P):0;
+    const acls=accPct>=72?'good':accPct>=60?'warn':'bad';
+    $('kpis').innerHTML=[
+      {l:'Acceptance (this week)',v:accPct+'%',s:A+' of '+P+' pings taken',c:acls},
+      {l:'Missed rate',v:misPct+'%',s:M+' timed out',c:misPct>=15?'bad':misPct>=8?'warn':'good'},
+      {l:'Responders gone quiet',v:String(quiet),s:'of '+R.length+' responders',c:quiet>0?'bad':'good'},
+      {l:'Pings routed',v:String(P),s:'week of '+WEEKS[S.week],c:''},
+    ].map(k=>`<div class="kpi"><div class="k-label">${k.l}</div><div class="k-val ${k.c}">${k.v}</div><div class="k-sub">${k.s}</div></div>`).join('');
   }
-  function toggleDrawer(card){
-    var d=card.querySelector('.drawer');
-    if(d) d.classList.toggle('open');
+
+  function sparks(ser){
+    const max=Math.max(...ser.map(x=>x.pings),1);
+    return '<div class="spark">'+ser.map((x,i)=>`<i class="${i===RELEASE?'rel':''}" style="height:${Math.max(6,100*x.pings/max)}%"></i>`).join('')+'</div>';
   }
-  function simulate(){
-    inRotation=true;
-    // console side
-    document.getElementById('mmTag').textContent='quiet → returning';
-    document.getElementById('mmTag').className='tag q';
-    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(3*DAY));
-    document.getElementById('mmWarn').style.display='block';
-    document.getElementById('mmGood').style.display='block';
-    document.getElementById('mmCard').classList.add('alert');
-    document.getElementById('demoLbl').textContent='Meteor Mite hit 3 quiet days. The console now flags it, and the system has eased her back in — see both screens.';
-    document.getElementById('simBtn').disabled=true;
-    document.getElementById('simBtn').style.opacity=.5;
-    document.getElementById('incoming').style.display='block';
-    // phone side
-    var st=document.getElementById('phStatus');
-    st.className='status live';
-    document.getElementById('phStatusTxt').textContent='Actively receiving pings';
-    showPing();
+
+  function renderConsole(data){
+    const c=data[S.sel][S.week], inc=$('incoming'), selName=R.find(r=>r.id===S.sel).name;
+    if(S.week>=RELEASE && (c.status==='active'||c.status==='busy'||c.status==='back')){
+      inc.classList.add('on'); inc.style.borderLeftColor='var(--missed)';
+      inc.innerHTML=`<b>Incoming call</b> — ${CALL.area} · ${CALL.type} · ${CALL.eta} &nbsp;→&nbsp; offered to <b>${selName}</b>`;
+    } else inc.classList.remove('on');
+
+    $('cards').innerHTML=R.map(r=>{
+      const d=data[r.id][S.week];
+      let flag='';
+      if(d.status==='quiet') flag=`<div class="r-flag quiet"><b>Being passed over</b> — not turning jobs down. No callouts offered in ~3+ days.</div>`;
+      else if(d.status==='back') flag=`<div class="r-flag back"><b>Back in rotation automatically</b> — re-inserted after a quiet stretch.</div>`;
+      const label=d.status==='busy'?'Busy':d.status==='quiet'?'Gone quiet':d.status==='back'?'Back in rotation':'Active';
+      return `<div class="rcard ${r.id===S.sel?'sel':''}" data-id="${r.id}">
+        <div class="r-top"><div><div class="r-name">${r.name}</div><div class="r-area">${r.area}</div></div>
+          <span class="badge ${d.status}">${label}</span></div>
+        <div class="r-stats">
+          <div class="stat"><div class="s-n">${d.pings}</div><div class="s-l">Pings</div></div>
+          <div class="stat"><div class="s-n acc">${d.acc}</div><div class="s-l">Accept</div></div>
+          <div class="stat"><div class="s-n dec">${d.dec}</div><div class="s-l">Decline</div></div>
+          <div class="stat"><div class="s-n mis">${d.mis}</div><div class="s-l">Missed</div></div>
+        </div>
+        ${sparks(data[r.id])}${flag}
+      </div>`;
+    }).join('');
+    $('cards').querySelectorAll('.rcard').forEach(el=>el.onclick=()=>{S.sel=el.dataset.id;render();});
   }
-  function showPing(){
-    var body=document.getElementById('phBody');
-    body.innerHTML=''+
-      '<div class="ping" id="pingCard">'+
-        '<h3>New callout</h3>'+
-        '<div class="meta">'+CALL+'</div>'+
-        '<div class="bar"><i id="barFill"></i></div>'+
-        '<div class="timer" id="timerTxt">90s to answer — a little longer, since you\'re just back in rotation</div>'+
-        '<div class="btns"><button class="take" onclick="resolve(\'take\')">Take it</button>'+
-        '<button class="pass" onclick="resolve(\'pass\')">Pass</button></div>'+
-      '</div>';
-    var t=90, fill=document.getElementById('barFill'), txt=document.getElementById('timerTxt');
-    timerId=setInterval(function(){
-      t--; fill.style.width=(t/90*100)+'%';
-      if(t<=0){clearInterval(timerId); resolve('miss');}
-      else txt.textContent=t+'s to answer — a little longer, since you\'re just back in rotation';
-    },1000);
-  }
-  function resolve(kind){
-    if(timerId){clearInterval(timerId);timerId=null;}
-    var body=document.getElementById('phBody'), html='';
-    if(kind==='take') html='<div class="resolved"><div class="big">Thanks for accepting the call.</div><div class="note">'+CALL+'</div></div>';
-    else if(kind==='pass') html='<div class="resolved no"><div class="big">Confirmed that you are unable to take this call.</div></div>';
-    else html='<div class="resolved"><div class="big">Missed</div><div class="note">Didn\'t count against you — a miss isn\'t treated like a "no" while you\'re returning. Still in rotation.</div></div>';
-    body.innerHTML=html;
-    // flow the responder's answer back to Kip's console card
-    document.getElementById('incoming').style.display='none';
-    var r=document.getElementById('mmResult'), ts=fmt(new Date());
-    document.getElementById('mmWarn').style.display='none';
-    if(kind==='take'){
-      document.getElementById('mmTag').textContent='active';
-      document.getElementById('mmTag').className='tag ok';
-      document.getElementById('mmCard').classList.remove('alert');
-      document.getElementById('mmGood').style.display='none';
-      document.getElementById('mmStat').textContent='On a callout now · Eastgate';
-      r.className='flag good'; r.textContent='Accepted · '+CALL+' · '+ts;
-    } else if(kind==='pass'){
-      r.className='flag info'; r.textContent='Meteor Mite declined this callout — no penalty. Still in rotation. · '+ts;
+
+  function renderPhone(data){
+    const r=R.find(x=>x.id===S.sel), c=data[r.id][S.week];
+    $('ph-sel').textContent=r.name;
+    clearInterval(cdTimer);
+    const inRotation=(c.status==='active'||c.status==='busy'||c.status==='back');
+    const amb=inRotation
+      ? `<div class="ambient on"><span class="dot"></span>Actively receiving pings</div>`
+      : `<div class="ambient off"><span class="dot"></span>No recent callouts</div>`;
+
+    const longer=(S.fix && c.status==='back');
+    const secs=longer?(S.wait+30):S.wait;
+    const demoDur=longer?13:9;
+    let body;
+    if(S.week<RELEASE || inRotation){
+      body=`${c.status==='back'?`<div class="reentry-note">You’re back in the rotation — this callout has a little more time on it.</div>`:''}
+        <div class="callcard">
+          <div class="ci-k">Incoming callout</div>
+          <div class="ci-v">${CALL.area} · ${CALL.type}</div>
+          <div class="ci-m">${CALL.eta}</div>
+          <div class="cd-wrap">
+            <div class="cd-label">Time to answer${longer?' · extended window':''}</div>
+            <div class="cd green" id="cd"><span class="cd-num" id="cd-num">${secs}</span><span class="cd-unit">s</span></div>
+            <div class="track"><i id="track"></i></div>
+          </div>
+          <div class="ph-btns"><button class="btn-take" id="take">Take it</button><button class="btn-pass" id="pass">Pass</button></div>
+        </div>`;
     } else {
-      r.className='flag info'; r.textContent='Meteor Mite missed this callout — not counted against her. Still in rotation. · '+ts;
+      body=`<div class="empty-ph"><b>Phone’s been quiet.</b><br>No callouts offered in the last few days.${S.fix?'':'<br><br>Nothing tells them why — and there’s no way back on their own.'}</div>`;
     }
-    r.style.display='block';
-    histMM.unshift({c:'Structural-entry', t:new Date(), o: kind==='take'?'acc':(kind==='pass'?'dec':'mis')});
-    renderHist('mmHist',histMM);
-    document.getElementById('demoLbl').textContent='Meteor Mite responded on her phone — her card on Kip\'s console now reflects it.';
+
+    $('screen').innerHTML=`
+      <div class="ph-head"><div class="app">Rook Responder</div><div class="who">${r.name}</div><div class="area">${r.area} · covers own area</div></div>
+      ${amb}<div class="ph-body" id="phbody">${body}</div>`;
+
+    const take=$('take'), pass=$('pass');
+    if(take){ take.onclick=()=>resolve('ok'); pass.onclick=()=>resolve('no'); startCountdown(secs, demoDur); }
   }
-  function reset(){
-    inRotation=false;
-    if(timerId){clearInterval(timerId);timerId=null;}
-    document.getElementById('mmTag').textContent='active';
-    document.getElementById('mmTag').className='tag ok';
-    document.getElementById('mmStat').textContent='Last callout: '+fmt(ago(DAY));
-    document.getElementById('mmWarn').style.display='none';
-    document.getElementById('mmGood').style.display='none';
-    document.getElementById('mmCard').classList.remove('alert');
-    document.getElementById('mmResult').style.display='none';
-    document.getElementById('incoming').style.display='none';
-    document.getElementById('demoLbl').textContent='Right now everything looks normal. Meteor Mite was pinged yesterday.';
-    var sim=document.getElementById('simBtn'); sim.disabled=false; sim.style.opacity=1;
-    var st=document.getElementById('phStatus'); st.className='status';
-    document.getElementById('phStatusTxt').textContent='Quiet';
-    document.getElementById('phBody').innerHTML='<div class="quietmsg">No callouts right now.<br>Your phone\'s been quiet for a few days.</div>';
-    initHist();
+
+  function startCountdown(secs, demoDur){
+    const cd=$('cd'), num=$('cd-num'), track=$('track');
+    if(!cd) return;
+    const start=performance.now();
+    clearInterval(cdTimer);
+    cdTimer=setInterval(()=>{
+      const frac=Math.max(0, 1-(performance.now()-start)/1000/demoDur);
+      if(num) num.textContent=Math.ceil(secs*frac);
+      const color = frac>0.55?'green':frac>0.28?'amber':'red';
+      cd.className='cd '+color;
+      if(track){ track.style.width=(frac*100)+'%'; track.style.background = color==='green'?'var(--accepted)':color==='amber'?'var(--missed)':'var(--declined)'; }
+      if(frac<=0){ clearInterval(cdTimer); resolve('mis'); }
+    },100);
   }
-  initTimes();
-  initHist();
+
+  function resolve(kind){
+    clearInterval(cdTimer);
+    const ts=new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+    const map={
+      ok:{cls:'ok',msg:'Thanks for accepting the call.',sub:`${CALL.area} · ${CALL.type} · ${CALL.eta} — ${ts}`},
+      no:{cls:'no',msg:'Confirmed that you are unable to take this call.',sub:ts},
+      mis:{cls:'mis',msg:'Callout moved on before it was answered.',sub:`Went to the next responder — ${ts}`},
+    }[kind];
+    const pb=$('phbody'); if(pb) pb.innerHTML=`<div class="result ${map.cls}">${map.msg}<span class="sub">${map.sub}</span></div>`;
+    const inc=$('incoming');
+    if(inc.classList.contains('on')){
+      const who=R.find(r=>r.id===S.sel).name;
+      inc.innerHTML = kind==='ok' ? `<b>Accepted</b> · ${CALL.area} · ${CALL.type} · ${who} · ${ts}`
+                    : kind==='no' ? `<b>Declined</b> · ${who} · ${ts}`
+                                  : `<b>Missed</b> · moved to the next responder · ${ts}`;
+      inc.style.borderLeftColor = kind==='ok'?'var(--accepted)':kind==='no'?'var(--declined)':'var(--missed)';
+    }
+  }
+
+  function renderStats(data){
+    const max=Math.max(...R.flatMap(r=>data[r.id].map(x=>x.pings)),1);
+    $('statrows').innerHTML=R.map(r=>{
+      const ser=data[r.id];
+      let postP=0,postA=0; for(let w=RELEASE;w<10;w++){postP+=ser[w].pings;postA+=ser[w].acc;}
+      const rate=postP?Math.round(100*postA/postP):0;
+      const bars=ser.map((x,i)=>{
+        const h=Math.max(2,66*x.pings/max);
+        const seg=(v,cls)=>v?`<div class="seg ${cls}" style="height:${100*v/Math.max(x.pings,1)}%"></div>`:'';
+        const cls='bcol'+(i===RELEASE?' rel':'')+(i===S.week?' now':'');
+        return `<div class="${cls}"><div class="stack" style="height:${h}px">${seg(x.mis,'mis')}${seg(x.dec,'dec')}${seg(x.acc,'acc')}</div><div class="wk">${WEEKS[i].split(' ')[0]}</div></div>`;
+      }).join('');
+      return `<div class="srow"><div class="s-who">${r.name}<small>${r.area} · home-only</small></div>
+        <div class="bars">${bars}</div>
+        <div class="s-sum"><b>${rate}%</b><small>post-4.2 accept</small></div></div>`;
+    }).join('');
+  }
+
+  function render(){
+    const data=allSeries();
+    $('v-prox').textContent=S.prox.toFixed(2);
+    $('v-rel').textContent=clamp(0.85-S.prox,0,1).toFixed(2);
+    $('v-wait').textContent=S.wait+'s';
+    $('v-miss').textContent=S.miss.toFixed(2);
+    $('v-dec').textContent=S.dec.toFixed(2);
+    $('wkread').innerHTML='Showing: week of <b>'+WEEKS[S.week]+'</b>'+(S.week===RELEASE?' <span class="rel">· 4.2 shipped</span>':S.week>RELEASE?' <span class="rel">· after 4.2</span>':'');
+    $('live-tag').textContent=S.week>=RELEASE?'Post-4.2':'Pre-4.2';
+    renderKPIs(data); renderConsole(data); renderPhone(data); renderStats(data);
+  }
+
+  function bindRange(id,key){ $(id).addEventListener('input',e=>{S[key]=+e.target.value;render();}); }
+  bindRange('prox','prox'); bindRange('wait','wait'); bindRange('miss','miss'); bindRange('dec','dec');
+  $('week').addEventListener('input',e=>{S.week=+e.target.value;render();});
+
+  function setFix(on){ S.fix=on; if(on) S.heal=true; $('fix').checked=on; $('fix2').checked=on; $('heal').checked=S.heal; render(); }
+  $('fix').addEventListener('change',e=>setFix(e.target.checked));
+  $('fix2').addEventListener('change',e=>setFix(e.target.checked));
+  $('heal').addEventListener('change',e=>{S.heal=e.target.checked; render();});
+
+  $('reset').addEventListener('click',()=>{
+    Object.assign(S,{prox:0.60,wait:60,miss:0.12,dec:0.12,heal:false,fix:false});
+    $('prox').value=0.60;$('wait').value=60;$('miss').value=0.12;$('dec').value=0.12;
+    $('heal').checked=false;$('fix').checked=false;$('fix2').checked=false;
+    render();
+  });
+
+  $('play').addEventListener('click',function(){
+    if(S.playing){ clearInterval(playTimer); S.playing=false; this.textContent='▶ Play'; return; }
+    S.playing=true; this.textContent='⏸ Pause';
+    if(S.week>=9){ S.week=0; $('week').value=0; render(); }
+    const btn=this;
+    playTimer=setInterval(()=>{
+      if(S.week>=9){ clearInterval(playTimer); S.playing=false; btn.textContent='▶ Play'; return; }
+      S.week++; $('week').value=S.week; render();
+    },750);
+  });
+
+  render();
+})();
 </script>
 </body>
 </html>

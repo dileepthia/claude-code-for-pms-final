@@ -63,3 +63,15 @@ When I click on Simulate, I should have a section show up on Console that is in 
 ### 15.
 On Console, when accepted you can just say "Accepted" followed by callout info followed by timestamp,
 Also the callout history tiles for all responders need to be top aligned
+
+### 16.
+In module 5 you did the brief and saved it as 05-super-speed/brief.md. Do another pass and based on all the information we have so far, update the brief. You need to capture everything from the start, the different comparions and findings, and finally come up with the Director brief. I am going to ask you to update the prototype and subsequently create a full-on presentation for my Executives
+
+### 17.
+Now update the prototype and if you need to completely overhaul and redo it that is fine. I want it to present a full dashboard with a side by side view of the dispatcher dashboard and the responder app next to each other. I want to see statistics of ping, received, accepted, declined over a period of time for each of the responders. I want all levers to be shown on the dashboard. In addition add a simulation for what is proposed in the Director brief. Show a professional layout
+
+### 18.
+how me the prototype
+
+### 19.
+on the responder app show a prominent countdown timer as well and it should change color as it counts down to zero
