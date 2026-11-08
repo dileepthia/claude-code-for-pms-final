@@ -15,7 +15,10 @@ prompt library built from your own questions.
 ---
 
 ### 1.
+The ping acceptance rate steadily got back to normal after Aug 10 what data supports this behavior
 
 ### 2.
+After 10 Aug there was a significant drop of pings for Farlight. Can you check if Farlight received near or farther away pings before and after 10 Aug and how many before and after
 
 ### 3.
+Can you analyze and compare the same for The Gale
